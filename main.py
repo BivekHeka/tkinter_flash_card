@@ -4,7 +4,11 @@ import random
 
 BACKGROUND_COLOR = "#b1ddc6"
 
-data = pandas.read_csv("D:/Python/flash_card/data/french_words.csv")
+try:
+    data = pandas.read_csv("D:/Python/flash_card/data/words_to_learn.csv")
+except FileNotFoundError:
+    data = pandas.read_csv("D:/Python/flash_card/data/french_words.csv")
+
 to_learn = data.to_dict(orient="records")
 
 
@@ -15,12 +19,18 @@ current_card = {}
 def next_card():
     global current_card, flip_timer   # <-- add flip_timer here
     window.after_cancel(flip_timer)   # cancel previous timer
+    if len(to_learn) == 0 :
+        canvas.itemconfig(card_title,text = "Finished !", fill="black" )
+        canvas.itemconfig(card_word, text = "You've learned all the words.", fill="black" )
+        unknown_button.config(state="disabled")
+        known_button.config(state="disabled")
+        return
+        
     current_card = random.choice(to_learn)
-    current_card["French"]
     canvas.itemconfig(card_title, text = "French", fill="black")
     canvas.itemconfig(card_word, text = current_card["French"], fill="black" )
-    flip_timer = window.after(3000, flip_card)
     canvas.itemconfig(card_background, image = card_front_img)
+    flip_timer = window.after(3000, flip_card)
 
 
 
@@ -28,6 +38,15 @@ def flip_card():
     canvas.itemconfig(card_background, image = card_back_img )
     canvas.itemconfig(card_title, text = "English", fill="white")
     canvas.itemconfig(card_word, text = current_card["English"], fill="white")
+
+
+def is_known():
+    to_learn.remove(current_card)
+    data = pandas.DataFrame(to_learn)
+    data.to_csv("D:/Python/flash_card/data/words_to_learn.csv", index = False)
+    next_card()
+
+
 
 window = Tk()
 window.title("Flashy")
@@ -50,7 +69,7 @@ unknown_button.grid(row=1,column=0)
 
 
 check_image = PhotoImage(file="D:/Python/flash_card/images/right.png")
-known_button = Button(image=check_image, highlightthickness=0 ,command=next_card)
+known_button = Button(image=check_image, highlightthickness=0 ,command=is_known)
 known_button.grid(row=1,column=1)
 
 next_card()
